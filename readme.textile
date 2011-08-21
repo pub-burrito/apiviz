@@ -1,0 +1,9 @@
+h1. About
+
+APIviz doclet fork. The main change is JDK 7 support.
+
+The original project can be found at: "code.google.com/p/apiviz":http://code.google.com/p/apiviz.
+
+h1. Plans
+
+A future goal is to allow wiki syntax to API comments.
