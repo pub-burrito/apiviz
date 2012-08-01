@@ -45,128 +45,6 @@ public class Graphviz {
     private static boolean homeDetermined;
     private static File home;
 
-    public static boolean isAvailable(RootDoc root) {
-        String executable = Graphviz.getExecutable(root);
-        File home = Graphviz.getHome(root);
-
-        ProcessBuilder pb = new ProcessBuilder(executable, "-V");
-        pb.redirectErrorStream(true);
-        if (home != null) {
-            root.printNotice("Graphviz Home: " + home);
-            pb.directory(home);
-        }
-        root.printNotice("Graphviz Executable: " + executable);
-
-        Process p;
-        try {
-            p = pb.start();
-        } catch (IOException e) {
-            root.printWarning(e.getMessage());
-            return false;
-        }
-
-        BufferedReader in = new BufferedReader(
-                new InputStreamReader(p.getInputStream()));
-        OutputStream out = p.getOutputStream();
-        try {
-            out.close();
-
-            String line = null;
-            while((line = in.readLine()) != null) {
-                if (line.matches(GRAPHVIZ_EXECUTABLE_FIRST_LINE_CHECK)) {
-                    root.printNotice("Graphviz Version: " + line);
-                    return true;
-                } else {
-                    root.printWarning("Unknown Graphviz output: " + line);
-                }
-            }
-            return false;
-        } catch (IOException e) {
-            root.printWarning("Problem detecting Graphviz: " + e.getMessage());
-            return false;
-        } finally {
-            try {
-                out.close();
-            } catch (IOException e) {
-                // Shouldn't happen.
-            }
-
-            try {
-                in.close();
-            } catch (IOException e) {
-                // Shouldn't happen.
-            }
-
-            for (;;) {
-                try {
-                    p.waitFor();
-                    break;
-                } catch (InterruptedException e) {
-                    // Ignore
-                }
-            }
-        }
-    }
-
-    public static void writeImageAndMap(
-            RootDoc root,
-            String diagram, File outputDirectory, String filename) throws IOException {
-
-        File pngFile = new File(outputDirectory, filename + ".png");
-        File mapFile = new File(outputDirectory, filename + ".map");
-
-        pngFile.delete();
-        mapFile.delete();
-
-        ProcessBuilder pb = new ProcessBuilder(
-                Graphviz.getExecutable(root),
-                "-Tcmapx", "-o", mapFile.getAbsolutePath(),
-                "-Tpng",   "-o", pngFile.getAbsolutePath());
-        pb.redirectErrorStream(true);
-        File home = Graphviz.getHome(root);
-        if (home != null) {
-            pb.directory(home);
-        }
-
-        Process p = pb.start();
-        BufferedReader in = new BufferedReader(
-                new InputStreamReader(p.getInputStream()));
-        Writer out = new OutputStreamWriter(p.getOutputStream(), "UTF-8");
-        try {
-            out.write(diagram);
-            out.close();
-
-            String line = null;
-            while((line = in.readLine()) != null) {
-                System.err.println(line);
-            }
-        } finally {
-            try {
-                out.close();
-            } catch (IOException e) {
-                // Shouldn't happen.
-            }
-
-            try {
-                in.close();
-            } catch (IOException e) {
-                // Shouldn't happen.
-            }
-
-            for (;;) {
-                try {
-                    int result = p.waitFor();
-                    if (result != 0) {
-                        throw new IllegalStateException("Graphviz exited with a non-zero return value: " + result);
-                    }
-                    break;
-                } catch (InterruptedException e) {
-                    // Ignore
-                }
-            }
-        }
-    }
-
     private static String getExecutable(RootDoc root) {
         String command = "dot";
 
@@ -232,6 +110,127 @@ public class Graphviz {
         }
         homeDetermined = true;
         return home = graphvizDir;
+    }
+
+    public static boolean isAvailable(RootDoc root) {
+        String executable = Graphviz.getExecutable(root);
+        File gvizHome = Graphviz.getHome(root);
+
+        ProcessBuilder pb = new ProcessBuilder(executable, "-V");
+        pb.redirectErrorStream(true);
+        if (gvizHome != null) {
+            root.printNotice("Graphviz Home: " + gvizHome);
+            pb.directory(gvizHome);
+        }
+        root.printNotice("Graphviz Executable: " + executable);
+
+        Process p;
+        try {
+            p = pb.start();
+        } catch (IOException e) {
+            root.printWarning(e.getMessage());
+            return false;
+        }
+
+        BufferedReader in = new BufferedReader(
+                new InputStreamReader(p.getInputStream()));
+        OutputStream out = p.getOutputStream();
+        try {
+            out.close();
+
+            String line = null;
+            while((line = in.readLine()) != null) {
+                if (line.matches(GRAPHVIZ_EXECUTABLE_FIRST_LINE_CHECK)) {
+                    root.printNotice("Graphviz Version: " + line);
+                    return true;
+                }
+                root.printWarning("Unknown Graphviz output: " + line);
+            }
+            return false;
+        } catch (IOException e) {
+            root.printWarning("Problem detecting Graphviz: " + e.getMessage());
+            return false;
+        } finally {
+            try {
+                out.close();
+            } catch (IOException e) {
+                // Shouldn't happen.
+            }
+
+            try {
+                in.close();
+            } catch (IOException e) {
+                // Shouldn't happen.
+            }
+
+            for (;;) {
+                try {
+                    p.waitFor();
+                    break;
+                } catch (InterruptedException e) {
+                    // Ignore
+                }
+            }
+        }
+    }
+
+    public static void writeImageAndMap(
+            RootDoc root,
+            String diagram, File outputDirectory, String filename) throws IOException {
+
+        File pngFile = new File(outputDirectory, filename + ".png");
+        File mapFile = new File(outputDirectory, filename + ".map");
+
+        pngFile.delete();
+        mapFile.delete();
+
+        ProcessBuilder pb = new ProcessBuilder(
+                Graphviz.getExecutable(root),
+                "-Tcmapx", "-o", mapFile.getAbsolutePath(),
+                "-Tpng",   "-o", pngFile.getAbsolutePath());
+        pb.redirectErrorStream(true);
+        File gvizHome = Graphviz.getHome(root);
+        if (gvizHome != null) {
+            pb.directory(gvizHome);
+        }
+
+        Process p = pb.start();
+        BufferedReader in = new BufferedReader(
+                new InputStreamReader(p.getInputStream()));
+        Writer out = new OutputStreamWriter(p.getOutputStream(), "UTF-8");
+        try {
+            out.write(diagram);
+            out.close();
+
+            String line = null;
+            while((line = in.readLine()) != null) {
+                System.err.println(line);
+            }
+        } finally {
+            try {
+                out.close();
+            } catch (IOException e) {
+                // Shouldn't happen.
+            }
+
+            try {
+                in.close();
+            } catch (IOException e) {
+                // Shouldn't happen.
+            }
+
+            for (;;) {
+                try {
+                    int result = p.waitFor();
+                    if (result != 0) {
+                        throw new IllegalStateException("Graphviz exited with a non-zero return value: " + result);
+                    }
+                    break;
+                } catch (InterruptedException e) {
+                    // Ignore
+                }
+            }
+        }
     }
 
     private Graphviz() {

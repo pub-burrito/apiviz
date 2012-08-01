@@ -42,8 +42,8 @@ public class APIvizRootDoc implements RootDoc {
 
     private final RootDoc root;
 
-    public APIvizRootDoc(RootDoc root) {
-        this.root = root;
+    public APIvizRootDoc(RootDoc aRoot) {
+        this.root = aRoot;
     }
 
     private static boolean isAboutApiVizTag(String msg) {

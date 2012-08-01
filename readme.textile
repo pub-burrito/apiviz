@@ -6,4 +6,4 @@ This fork is based in the last stable release (1.3.1 GA). The original project c
 
 h1. Plans
 
-A future goal is to allow wiki syntax to API comments, but don't expect to see a lot of improvements here.
+A future goal is to allow wiki syntax to API comments, but don't expect to see a lot of improvements here in a short time.
