@@ -37,6 +37,7 @@
 		</developerConnection>
 	</scm>
 
+	<!--
 	<distributionManagement>
 		<repository>
 			<id>repository.jboss.org</id>
@@ -48,6 +49,17 @@
 			<name>JBoss.org Development Snapshot Repository</name>
 			<url>https://snapshots.jboss.org/maven2</url>
 		</snapshotRepository>
+	</distributionManagement>
+	-->
+	<distributionManagement>
+ 		<repository>
+			<id>cloud.archiva.internal</id>
+	    	<url>http://cloud.local:8180/archiva/repository/internal/</url>
+	  	</repository>
+	 	<snapshotRepository>
+	    	<id>cloud.archiva.snapshots</id>
+	    	<url>http://cloud.local:8180/archiva/repository/snapshots/</url>
+	 	</snapshotRepository>
 	</distributionManagement>
 
 	<properties>
