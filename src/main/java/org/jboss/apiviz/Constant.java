@@ -32,8 +32,8 @@ package org.jboss.apiviz;
 public class Constant {
 
     public static final String NEWLINE = System.getProperty("line.separator", "\n");
-    public static final String NORMAL_FONT = "Arial";
-    public static final String ITALIC_FONT = "Arial Italic";
+    public static final String NORMAL_FONT = "ArialMT";
+    public static final String ITALIC_FONT = "ArialMT Italic";
 
     public static final String TAG_PREFIX = "@apiviz.";
 
