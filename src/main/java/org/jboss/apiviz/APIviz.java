@@ -22,11 +22,20 @@
  */
 package org.jboss.apiviz;
 
-import static org.jboss.apiviz.Constant.*;
+import static org.jboss.apiviz.Constant.NEWLINE;
+import static org.jboss.apiviz.Constant.OPTION_CATEGORY;
+import static org.jboss.apiviz.Constant.OPTION_HELP;
+import static org.jboss.apiviz.Constant.OPTION_NO_PACKAGE_DIAGRAM;
+import static org.jboss.apiviz.Constant.OPTION_SOURCE_CLASS_PATH;
+import static org.jboss.apiviz.Constant.TAG_CATEGORY;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -41,11 +50,28 @@ import jdepend.framework.JavaClass;
 import jdepend.framework.JavaPackage;
 import jdepend.framework.PackageFilter;
 
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+
 import com.sun.javadoc.ClassDoc;
 import com.sun.javadoc.DocErrorReporter;
 import com.sun.javadoc.LanguageVersion;
 import com.sun.javadoc.PackageDoc;
 import com.sun.javadoc.RootDoc;
+import com.sun.tools.doclets.formats.html.ConfigurationImpl;
+import com.sun.tools.doclets.formats.html.LinkInfoImpl;
+import com.sun.tools.doclets.formats.html.NestedClassWriterImpl;
+import com.sun.tools.doclets.formats.html.SubWriterHolderWriter;
+import com.sun.tools.doclets.formats.html.WriterFactoryImpl;
+import com.sun.tools.doclets.formats.html.markup.HtmlConstants;
+import com.sun.tools.doclets.formats.html.markup.HtmlTree;
+import com.sun.tools.doclets.formats.html.markup.RawHtml;
+import com.sun.tools.doclets.formats.html.markup.StringContent;
+import com.sun.tools.doclets.internal.toolkit.ClassWriter;
+import com.sun.tools.doclets.internal.toolkit.Content;
+import com.sun.tools.doclets.internal.toolkit.MemberSummaryWriter;
+import com.sun.tools.doclets.internal.toolkit.util.VisibleMemberMap;
 import com.sun.tools.doclets.standard.Standard;
 
 /**
@@ -319,8 +345,138 @@ public class APIviz {
 
         return answer;
     }
+    
+    public static class CustomWriterFactory extends WriterFactoryImpl
+    {
+		public CustomWriterFactory( ConfigurationImpl configuration )
+		{
+			super( configuration );
+		}
+		
+		@Override
+		public MemberSummaryWriter getMemberSummaryWriter( ClassWriter classWriter, int memberType ) throws Exception
+		{
+			String type = null;
+			
+			try
+			{
+				switch (memberType) {
+		            case VisibleMemberMap.CONSTRUCTORS:
+		                type = "constructors";
+		                break;
+		            case VisibleMemberMap.ENUM_CONSTANTS:
+		            	type = "enum_constants";
+		            	break;
+		            case VisibleMemberMap.FIELDS:
+		            	type = "fields";
+		            	break;
+		            case VisibleMemberMap.PROPERTIES:
+		            	type = "properties";
+		            	break;
+		            case VisibleMemberMap.INNERCLASSES:
+		            	type = "innerclasses";
+		            	
+		            	return new CustomNestedClassWriterImpl((SubWriterHolderWriter) classWriter, classWriter.getClassDoc());
+		            	
+		            case VisibleMemberMap.METHODS:
+		            	type = "methods";
+		            	break;
+		            default:
+		        }
+			}
+			finally
+			{
+				configuration().root.printNotice( "MemberSummaryWriter for: " + type );
+			}
+			
+			return super.getMemberSummaryWriter( classWriter, memberType );
+		}
+		
+		protected ConfigurationImpl configuration()
+		{
+			try
+			{
+				Field configurationField = WriterFactoryImpl.class.getDeclaredField( "configuration" );
+				configurationField.setAccessible( true );
+				
+				return (ConfigurationImpl) configurationField.get( this );
+			}
+			catch (Exception e)
+			{
+				e.printStackTrace();
+				
+				return null;
+			}
+		}
+    }
+    
+    public static class CustomNestedClassWriterImpl extends NestedClassWriterImpl
+    {
 
-    public static boolean start(RootDoc root) {
+		public CustomNestedClassWriterImpl( SubWriterHolderWriter writer, ClassDoc classdoc )
+		{
+			super( writer, classdoc );
+		}
+    	
+	    /**
+	     * {@inheritDoc}
+	     */
+	    public void addInheritedSummaryLabel(ClassDoc cd, Content inheritedTree) {
+	        Content classLink = new RawHtml(writer.getPreQualifiedClassLink(LinkInfoImpl.CONTEXT_MEMBER, cd, false));
+	        
+	        Content notice = new StringContent( "THIS IS CONTENT WE WILL REMOVE LATER" );
+	        inheritedTree.addContent(notice);
+	        
+	        Content label = new StringContent(
+	        	cd.isInterface() ?
+	            configuration().getText("doclet.Nested_Classes_Interface_Inherited_From_Interface") :
+	            configuration().getText("doclet.Nested_Classes_Interfaces_Inherited_From_Class"));
+	        
+	        Content labelHeading = HtmlTree.HEADING(HtmlConstants.INHERITED_SUMMARY_HEADING, label);
+	        
+	        labelHeading.addContent(writer.getSpace());
+	        labelHeading.addContent(classLink);
+	        inheritedTree.addContent(labelHeading);
+	    }
+    }
+    
+    @SuppressWarnings( "restriction" )
+	public static boolean start(RootDoc root) throws InstantiationException, IllegalAccessException, IllegalArgumentException, NoSuchFieldException, SecurityException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException {
+    	
+    	final RootDoc originalRoot = root;
+
+		ConfigurationImpl baseConfig = ConfigurationImpl.getInstance();
+		
+		final ConfigurationImpl customConfig = Mockito.spy( baseConfig ); //proxyClass.newInstance(); //superConstructor.newInstance();
+		
+		Field configurationField = customConfig.standardmessage.getClass().getDeclaredField( "configuration" );
+		configurationField.setAccessible( true );
+		
+		Field modifiersField = Field.class.getDeclaredField( "modifiers" );
+		modifiersField.setAccessible( true );
+		
+		modifiersField.set( configurationField, configurationField.getModifiers() & ~Modifier.FINAL );
+		
+		configurationField.set( customConfig.standardmessage, customConfig );
+		configurationField.set( customConfig.message, customConfig );
+		
+		Mockito.doAnswer( new Answer<Object>() {
+
+			@Override
+			public Object answer( InvocationOnMock invocation ) throws Throwable
+			{
+				originalRoot.printNotice( "Calling: " + invocation + " with: " + Arrays.asList( invocation.getArguments() ) );
+				
+				return new CustomWriterFactory( customConfig );
+			}
+			
+		} ).when( customConfig ).getWriterFactory();
+		
+    	Field instanceField = ConfigurationImpl.class.getDeclaredField( "instance" );
+    	instanceField.setAccessible( true );
+    	
+		instanceField.set( null, customConfig );
+    	
         root = new APIvizRootDoc(root);
         if (!Standard.start(root)) {
             return false;
@@ -353,6 +509,8 @@ public class APIviz {
 
     public static boolean validOptions(String[][] options, DocErrorReporter errorReporter) {
         for (String[] o: options) {
+        	System.out.println(String.format( "- Options: %s", Arrays.asList( o ) ));
+        	
             if (OPTION_SOURCE_CLASS_PATH.equals(o[0])) {
                 File[] cp = getClassPath(options);
                 if (cp.length == 0) {
@@ -383,7 +541,7 @@ public class APIviz {
             if (OPTION_NO_PACKAGE_DIAGRAM.equals(o[0])) {
                 continue;
             }
-
+            
             newOptions.add(o);
         }
 

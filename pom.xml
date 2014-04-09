@@ -64,6 +64,8 @@
 
 	<properties>
 		<jdepend-version>2.9.1</jdepend-version>
+		<javassist-version>3.16.1-GA</javassist-version>
+		<mockito-version>1.9.5</mockito-version>
 	</properties>
 
 	<profiles>
@@ -132,6 +134,18 @@
 			<artifactId>jdepend</artifactId>
 			<version>${jdepend-version}</version>
 			<optional>true</optional>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.javassist</groupId>
+			<artifactId>javassist</artifactId>
+			<version>${javassist-version}</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-all</artifactId>
+			<version>${mockito-version}</version>
 		</dependency>
 
 		<!-- Testing -->
@@ -232,10 +246,22 @@
 												filemode="644" dirmode="755">
 												<exclude name="META-INF/**" />
 											</zipfileset>
+											<zipfileset
+												src="${settings.localRepository}/org/javassist/javassist/${javassist-version}/javassist-${javassist-version}.jar"
+												filemode="644" dirmode="755">
+												<exclude name="META-INF/**" />
+											</zipfileset>
+											<zipfileset
+												src="${settings.localRepository}/org/mockito/mockito-all/${mockito-version}/mockito-all-${mockito-version}.jar"
+												filemode="644" dirmode="755">
+												<exclude name="META-INF/**" />
+											</zipfileset>
 											<zipfileset src="${project.build.directory}/${project.build.finalName}.orig.jar"
 												filemode="644" dirmode="755">
 												<exclude name="*/*/*/example/**" />
 												<exclude name="jdepend/**" />
+												<exclude name="javassist/**" />
+												<exclude name="org/mockito/**" />
 											</zipfileset>
 										</zip>
 										<delete file="${project.build.directory}/${project.build.finalName}.orig.jar" />
